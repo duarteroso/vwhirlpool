@@ -12,7 +12,7 @@ More information can be found at the offical [website](https://web.archive.org/w
 import duarteroso.vwhirlpool
 
 fn main() {
-  whirlpool.hash("abc")
+  vwhirlpool.hash("abc")
 }
 ```
 
