@@ -1,21 +1,13 @@
 module vwhirlpool
 
-import duarteroso.vsemver
+import v.vmod
 
-// Module init
-fn init() {
+// manifest of module
+pub fn manifest() ?vmod.Manifest {
+	return vmod.decode(@VMOD_FILE)
 }
 
-// Module semver
-pub fn module_version() vsemver.SemVer {
-	return vsemver.SemVer {
-		major: 1
-		minor: 0
-		patch: 0
-	}
-}
-
-// Hashing function
+// hash function
 pub fn hash(input string) string {
 	// Initialize Nessie struct
 	mut n := create_nessie()
@@ -24,11 +16,12 @@ pub fn hash(input string) string {
 	// Create digest
 	digest := n.finalize()
 	// Translate digest into string
-	mut h := byte_array_to_string(digest)
+	h := byte_array_to_string(digest)
 	// Hash ready
 	return h
 }
 
+// byte_array_to_string tranform byte array into human readable string
 fn byte_array_to_string(ba []byte) string {
 	mut s := ''
 	for i in 0 .. ba.len {
