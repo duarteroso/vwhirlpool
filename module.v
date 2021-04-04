@@ -30,9 +30,9 @@ pub fn hash(input string) string {
 }
 
 fn byte_array_to_string(ba []byte) string {
-	mut s := ""
-	for i in 0..ba.len {
-		s += "${ba[i]:02x}".to_upper()
+	mut s := ''
+	for i in 0 .. ba.len {
+		s += '${ba[i]:02x}'.to_upper()
 	}
 	return s
 }
