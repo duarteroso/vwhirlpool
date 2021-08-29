@@ -16,6 +16,8 @@ fn main() {
 }
 ```
 
+Enable flag `trace_intermediate_values` to show intermediate values.
+
 ### Authors
 @duarteroso
 

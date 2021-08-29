@@ -238,7 +238,7 @@ fn (mut n Nessie) finalize() []byte {
 }
 
 //
-[if trace_intermediate_values]
+[if trace_intermediate_values ?]
 fn (n &Nessie) print_derived() {
 	mut offset := 0
 	println('The 8x8 matrix z dereived from the data-string is as follows')
@@ -259,7 +259,7 @@ fn (n &Nessie) print_derived() {
 }
 
 //
-[if trace_intermediate_values]
+[if trace_intermediate_values ?]
 fn (n &Nessie) intermediate_values(k []u64, state []u64) {
 	for i := 0; i < vwhirlpool.digest_bytes / 8; i++ {
 		print('${(k[i] >> 56):02x}' + ' ')
