@@ -7,4 +7,3 @@ Module {
 	repo_url: 'https://github.com/duarteroso/vwhirlpool'
 	author: 'duarteroso'
 }
-}
