@@ -3,8 +3,8 @@ module vwhirlpool
 import v.vmod
 
 // manifest of module
-pub fn manifest() ?vmod.Manifest {
-	return vmod.decode(@VMOD_FILE)
+pub fn manifest() !vmod.Manifest {
+	return vmod.decode(@VMOD_FILE) or { err }
 }
 
 // hash function
@@ -22,7 +22,7 @@ pub fn hash(input string) string {
 }
 
 // byte_array_to_string tranform byte array into human readable string
-fn byte_array_to_string(ba []byte) string {
+fn byte_array_to_string(ba []u8) string {
 	mut s := ''
 	for i in 0 .. ba.len {
 		s += '${ba[i]:02x}'.to_upper()

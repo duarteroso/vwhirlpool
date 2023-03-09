@@ -13,8 +13,8 @@ const (
 //
 struct Nessie {
 mut:
-	bit_length  []byte
-	buffer      []byte
+	bit_length  []u8
+	buffer      []u8
 	buffer_bits int
 	buffer_pos  int
 	hash        []u64
@@ -29,15 +29,15 @@ fn create_nessie() &Nessie {
 
 //
 fn (mut n Nessie) init() {
-	n.bit_length = []byte{len: vwhirlpool.length_bytes, init: byte(0)}
-	n.buffer = []byte{len: vwhirlpool.wblock_bytes, init: byte(0)}
+	n.bit_length = []u8{len: length_bytes, init: u8(0)}
+	n.buffer = []u8{len: wblock_bytes, init: u8(0)}
 	n.buffer_bits = 0
 	n.buffer_pos = 0
-	n.hash = []u64{len: vwhirlpool.digest_bytes / 8, init: u64(0)}
+	n.hash = []u64{len: digest_bytes / 8, init: u64(0)}
 }
 
 //
-fn (mut n Nessie) add(src []byte) {
+fn (mut n Nessie) add(src []u8) {
 	mut source_bits := src.len * 8
 	mut source_pos := 0
 	mut source_gap := (8 - (int(source_bits) & 7)) & 7
@@ -49,9 +49,9 @@ fn (mut n Nessie) add(src []byte) {
 	//
 	mut value := source_bits
 	carry = 0
-	for i := 31; i >= 0 && (carry != 0 || value != u64(0)); i-- {
+	for i := 31; i >= 0 && (carry != 0 || value != 0); i-- {
 		carry += n.bit_length[i] + (u32(value) & 0xff)
-		n.bit_length[i] = byte(carry)
+		n.bit_length[i] = u8(carry)
 		carry >>= 8
 		value >>= 8
 	}
@@ -59,15 +59,15 @@ fn (mut n Nessie) add(src []byte) {
 	for source_bits > 8 {
 		b = ((src[source_pos] << source_gap) & 0xff) | ((src[source_pos + 1] & 0xff) >> (8 - source_gap))
 		//
-		n.buffer[buffer_pos] |= byte(b >> buffer_rem)
+		n.buffer[buffer_pos] |= u8(b >> buffer_rem)
 		buffer_pos++
 		buffer_bits += 8 - buffer_rem
-		if buffer_bits == vwhirlpool.digest_bits {
+		if buffer_bits == digest_bits {
 			n.process()
 			buffer_bits = 0
 			buffer_pos = 0
 		}
-		n.buffer[buffer_pos] = byte(b << (8 - buffer_rem))
+		n.buffer[buffer_pos] = u8(b << (8 - buffer_rem))
 		buffer_bits += buffer_rem
 		//
 		source_bits -= 8
@@ -76,7 +76,7 @@ fn (mut n Nessie) add(src []byte) {
 	//
 	if source_bits > 0 {
 		b = (src[source_pos] << source_gap) & 0xff
-		n.buffer[buffer_pos] |= byte(b >> buffer_rem)
+		n.buffer[buffer_pos] |= u8(b >> buffer_rem)
 	} else {
 		b = 0
 	}
@@ -86,12 +86,12 @@ fn (mut n Nessie) add(src []byte) {
 		buffer_pos++
 		buffer_bits += (8 - buffer_rem)
 		source_bits -= (8 - buffer_rem)
-		if buffer_bits == vwhirlpool.digest_bits {
+		if buffer_bits == digest_bits {
 			n.process()
 			buffer_bits = 0
 			buffer_pos = 0
 		}
-		n.buffer[buffer_pos] = byte(b << (8 - buffer_rem))
+		n.buffer[buffer_pos] = u8(b << (8 - buffer_rem))
 		buffer_bits += int(source_bits)
 	}
 	//
@@ -183,51 +183,51 @@ fn (mut n Nessie) process() {
 }
 
 //
-fn (mut n Nessie) finalize() []byte {
+fn (mut n Nessie) finalize() []u8 {
 	mut len := 0
 	mut buffer_bits := n.buffer_bits
 	mut buffer_pos := n.buffer_pos
 	//
-	n.buffer[buffer_pos] |= (byte(0x80) >> (buffer_bits & 7))
+	n.buffer[buffer_pos] |= (u8(0x80) >> (buffer_bits & 7))
 	buffer_pos++
 	//
-	if buffer_pos > vwhirlpool.wblock_bytes - vwhirlpool.length_bytes {
-		if buffer_pos < vwhirlpool.wblock_bytes {
+	if buffer_pos > wblock_bytes - length_bytes {
+		if buffer_pos < wblock_bytes {
 			// C.memset(n.buffer.data + buffer_pos, 0, wblock_bytes - buffer_pos)
-			len = vwhirlpool.wblock_bytes - buffer_pos
+			len = wblock_bytes - buffer_pos
 			for i := 0; i < len; i++ {
-				n.buffer[i + buffer_pos] = byte(0)
+				n.buffer[i + buffer_pos] = u8(0)
 			}
 		}
 		//
 		n.process()
 		buffer_pos = 0
 	}
-	if buffer_pos < vwhirlpool.wblock_bytes - vwhirlpool.length_bytes {
+	if buffer_pos < wblock_bytes - length_bytes {
 		// C.memset(n.buffer.data + buffer_pos, 0, (wblock_bytes - length_bytes) - buffer_pos)
-		len = ((vwhirlpool.wblock_bytes - vwhirlpool.length_bytes) - buffer_pos)
+		len = ((wblock_bytes - length_bytes) - buffer_pos)
 		for i := 0; i < len; i++ {
-			n.buffer[i + buffer_pos] = byte(0)
+			n.buffer[i + buffer_pos] = u8(0)
 		}
 	}
-	buffer_pos = vwhirlpool.wblock_bytes - vwhirlpool.length_bytes
+	buffer_pos = wblock_bytes - length_bytes
 	// C.memcpy(n.buffer.data + pos, n.bit_length.data, length_bytes)
-	for i := 0; i < vwhirlpool.length_bytes; i++ {
+	for i := 0; i < length_bytes; i++ {
 		n.buffer[i + buffer_pos] = n.bit_length[i]
 	}
 	n.process()
 	//
-	mut digest := []byte{len: vwhirlpool.digest_bytes, init: 0}
+	mut digest := []u8{len: digest_bytes, init: 0}
 	mut offset := 0
-	for i := 0; i < vwhirlpool.digest_bytes / 8; i++ {
-		digest[offset + 0] = byte(n.hash[i] >> 56)
-		digest[offset + 1] = byte(n.hash[i] >> 48)
-		digest[offset + 2] = byte(n.hash[i] >> 40)
-		digest[offset + 3] = byte(n.hash[i] >> 32)
-		digest[offset + 4] = byte(n.hash[i] >> 24)
-		digest[offset + 5] = byte(n.hash[i] >> 16)
-		digest[offset + 6] = byte(n.hash[i] >> 8)
-		digest[offset + 7] = byte(n.hash[i])
+	for i := 0; i < digest_bytes / 8; i++ {
+		digest[offset + 0] = u8(n.hash[i] >> 56)
+		digest[offset + 1] = u8(n.hash[i] >> 48)
+		digest[offset + 2] = u8(n.hash[i] >> 40)
+		digest[offset + 3] = u8(n.hash[i] >> 32)
+		digest[offset + 4] = u8(n.hash[i] >> 24)
+		digest[offset + 5] = u8(n.hash[i] >> 16)
+		digest[offset + 6] = u8(n.hash[i] >> 8)
+		digest[offset + 7] = u8(n.hash[i])
 		//
 		offset += 8
 	}
@@ -242,7 +242,7 @@ fn (mut n Nessie) finalize() []byte {
 fn (n &Nessie) print_derived() {
 	mut offset := 0
 	println('The 8x8 matrix z dereived from the data-string is as follows')
-	for i := 0; i < vwhirlpool.wblock_bytes / 8; i++ {
+	for i := 0; i < wblock_bytes / 8; i++ {
 		print('\t')
 		print('${n.buffer[0 + offset]:02x}' + ' ')
 		print('${n.buffer[1 + offset]:02x}' + ' ')
@@ -261,7 +261,7 @@ fn (n &Nessie) print_derived() {
 //
 [if trace_intermediate_values ?]
 fn (n &Nessie) intermediate_values(k []u64, state []u64) {
-	for i := 0; i < vwhirlpool.digest_bytes / 8; i++ {
+	for i := 0; i < digest_bytes / 8; i++ {
 		print('${(k[i] >> 56):02x}' + ' ')
 		print('${(k[i] >> 48):02x}' + ' ')
 		print('${(k[i] >> 40):02x}' + ' ')

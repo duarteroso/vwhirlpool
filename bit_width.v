@@ -2,7 +2,7 @@ module vwhirlpool
 
 //
 pub fn to_u8(x u64) u16 {
-	return u16(byte(x & 0xff))
+	return u16(u8(x & 0xff))
 }
 
 //
