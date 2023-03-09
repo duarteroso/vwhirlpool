@@ -1,6 +1,6 @@
 Module {
 	name: 'vwhirlpool',
-	version: '1.0.0',
+	version: '0.3.3',
 	description: 'Whirlpool hash algorithm',
 	dependencies: []
 	license: 'BSD-2-Clause'
