@@ -1,14 +1,12 @@
 module vwhirlpool
 
 //
-const (
-	digest_bytes = 64
-	digest_bits  = (8 * digest_bytes)
-	wblock_bytes = 64
-	wblock_bits  = (8 * wblock_bytes)
-	length_bytes = 32
-	length_bits  = (8 * length_bytes)
-)
+const digest_bytes = 64
+const digest_bits = (8 * digest_bytes)
+const wblock_bytes = 64
+const wblock_bits = (8 * wblock_bytes)
+const length_bytes = 32
+const length_bits = (8 * length_bytes)
 
 //
 struct Nessie {
@@ -29,11 +27,11 @@ fn create_nessie() &Nessie {
 
 //
 fn (mut n Nessie) init() {
-	n.bit_length = []u8{len: length_bytes, init: u8(0)}
-	n.buffer = []u8{len: wblock_bytes, init: u8(0)}
+	n.bit_length = []u8{len: vwhirlpool.length_bytes, init: u8(0)}
+	n.buffer = []u8{len: vwhirlpool.wblock_bytes, init: u8(0)}
 	n.buffer_bits = 0
 	n.buffer_pos = 0
-	n.hash = []u64{len: digest_bytes / 8, init: u64(0)}
+	n.hash = []u64{len: vwhirlpool.digest_bytes / 8, init: u64(0)}
 }
 
 //
@@ -62,7 +60,7 @@ fn (mut n Nessie) add(src []u8) {
 		n.buffer[buffer_pos] |= u8(b >> buffer_rem)
 		buffer_pos++
 		buffer_bits += 8 - buffer_rem
-		if buffer_bits == digest_bits {
+		if buffer_bits == vwhirlpool.digest_bits {
 			n.process()
 			buffer_bits = 0
 			buffer_pos = 0
@@ -86,7 +84,7 @@ fn (mut n Nessie) add(src []u8) {
 		buffer_pos++
 		buffer_bits += (8 - buffer_rem)
 		source_bits -= (8 - buffer_rem)
-		if buffer_bits == digest_bits {
+		if buffer_bits == vwhirlpool.digest_bits {
 			n.process()
 			buffer_bits = 0
 			buffer_pos = 0
@@ -191,10 +189,10 @@ fn (mut n Nessie) finalize() []u8 {
 	n.buffer[buffer_pos] |= (u8(0x80) >> (buffer_bits & 7))
 	buffer_pos++
 	//
-	if buffer_pos > wblock_bytes - length_bytes {
-		if buffer_pos < wblock_bytes {
+	if buffer_pos > vwhirlpool.wblock_bytes - vwhirlpool.length_bytes {
+		if buffer_pos < vwhirlpool.wblock_bytes {
 			// C.memset(n.buffer.data + buffer_pos, 0, wblock_bytes - buffer_pos)
-			len = wblock_bytes - buffer_pos
+			len = vwhirlpool.wblock_bytes - buffer_pos
 			for i := 0; i < len; i++ {
 				n.buffer[i + buffer_pos] = u8(0)
 			}
@@ -203,23 +201,23 @@ fn (mut n Nessie) finalize() []u8 {
 		n.process()
 		buffer_pos = 0
 	}
-	if buffer_pos < wblock_bytes - length_bytes {
+	if buffer_pos < vwhirlpool.wblock_bytes - vwhirlpool.length_bytes {
 		// C.memset(n.buffer.data + buffer_pos, 0, (wblock_bytes - length_bytes) - buffer_pos)
-		len = ((wblock_bytes - length_bytes) - buffer_pos)
+		len = ((vwhirlpool.wblock_bytes - vwhirlpool.length_bytes) - buffer_pos)
 		for i := 0; i < len; i++ {
 			n.buffer[i + buffer_pos] = u8(0)
 		}
 	}
-	buffer_pos = wblock_bytes - length_bytes
+	buffer_pos = vwhirlpool.wblock_bytes - vwhirlpool.length_bytes
 	// C.memcpy(n.buffer.data + pos, n.bit_length.data, length_bytes)
-	for i := 0; i < length_bytes; i++ {
+	for i := 0; i < vwhirlpool.length_bytes; i++ {
 		n.buffer[i + buffer_pos] = n.bit_length[i]
 	}
 	n.process()
 	//
-	mut digest := []u8{len: digest_bytes, init: 0}
+	mut digest := []u8{len: vwhirlpool.digest_bytes, init: 0}
 	mut offset := 0
-	for i := 0; i < digest_bytes / 8; i++ {
+	for i := 0; i < vwhirlpool.digest_bytes / 8; i++ {
 		digest[offset + 0] = u8(n.hash[i] >> 56)
 		digest[offset + 1] = u8(n.hash[i] >> 48)
 		digest[offset + 2] = u8(n.hash[i] >> 40)
@@ -238,11 +236,11 @@ fn (mut n Nessie) finalize() []u8 {
 }
 
 //
-[if trace_intermediate_values ?]
+@[if trace_intermediate_values ?]
 fn (n &Nessie) print_derived() {
 	mut offset := 0
 	println('The 8x8 matrix z dereived from the data-string is as follows')
-	for i := 0; i < wblock_bytes / 8; i++ {
+	for i := 0; i < vwhirlpool.wblock_bytes / 8; i++ {
 		print('\t')
 		print('${n.buffer[0 + offset]:02x}' + ' ')
 		print('${n.buffer[1 + offset]:02x}' + ' ')
@@ -259,9 +257,9 @@ fn (n &Nessie) print_derived() {
 }
 
 //
-[if trace_intermediate_values ?]
+@[if trace_intermediate_values ?]
 fn (n &Nessie) intermediate_values(k []u64, state []u64) {
-	for i := 0; i < digest_bytes / 8; i++ {
+	for i := 0; i < vwhirlpool.digest_bytes / 8; i++ {
 		print('${(k[i] >> 56):02x}' + ' ')
 		print('${(k[i] >> 48):02x}' + ' ')
 		print('${(k[i] >> 40):02x}' + ' ')
